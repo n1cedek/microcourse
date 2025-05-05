@@ -80,7 +80,7 @@ func getNoteHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	notes.m.RLock()
-	defer notes.m.RLock()
+	defer notes.m.RUnlock()
 
 	note, ok := notes.elems[id]
 
