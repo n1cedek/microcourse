@@ -10,7 +10,6 @@ func Load(path string) error {
 	return nil
 }
 
-type PGConfig interface 
 type PGConfig interface {
 	DSN() string
 }
