@@ -1,1 +1,5 @@
 .idea
+/week1/grpc/bin/
+/week2/config/bin/
+/week2/grpc/bin/
+/week2/postgres/bin/
