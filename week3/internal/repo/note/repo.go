@@ -16,7 +16,7 @@ const (
 
 	idColumn        = "id"
 	titleColumn     = "title"
-	contentColumn   = "content"
+	contentColumn   = "body"
 	createdAtColumn = "created_at"
 	updatedAtColumn = "updated_at"
 )
@@ -33,6 +33,7 @@ func NewRepo(db *pgxpool.Pool) repository.NoteRepo {
 func (r *repo) Create(ctx context.Context, info *model.NoteInfo) (int64, error) {
 	//Делаем запрос на вставку записей в таблицу
 	builderInsert := sq.Insert(tableName).
+		PlaceholderFormat(sq.Dollar).
 		Columns(titleColumn, contentColumn).
 		Values(info.Title, info.Content).
 		Suffix("RETURNING id")
@@ -54,10 +55,9 @@ func (r *repo) Create(ctx context.Context, info *model.NoteInfo) (int64, error) 
 func (r *repo) Get(ctx context.Context, id int64) (*model.Note, error) {
 	//Делаем запрос на получение данных
 	builderSelect := sq.Select(idColumn, titleColumn, contentColumn, createdAtColumn, updatedAtColumn).
-		From(tableName).
 		PlaceholderFormat(sq.Dollar).
+		From(tableName).
 		Where(sq.Eq{idColumn: id}).
-		OrderBy("id ASC").
 		Limit(10)
 
 	query, arg, err := builderSelect.ToSql()
