@@ -2,9 +2,10 @@ package app
 
 import (
 	"context"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 	notea "microservices_course/week3/internal/api/note"
+	"microservices_course/week3/internal/client/db"
+	"microservices_course/week3/internal/client/db/pg"
 	"microservices_course/week3/internal/closer"
 	"microservices_course/week3/internal/config/env"
 	repository "microservices_course/week3/internal/repo"
@@ -16,7 +17,7 @@ import (
 type serviceProvider struct {
 	pgConfig   env.PGConfig
 	grpcConfig env.GPRCConfig
-	pgPool     *pgxpool.Pool
+	dbClient   db.Client
 
 	noteService service.NoteService
 	noteRepo    repository.NoteRepo
@@ -50,30 +51,28 @@ func (s *serviceProvider) GRPCConfig() env.GPRCConfig {
 	return s.grpcConfig
 }
 
-func (s *serviceProvider) PgPool(ctx context.Context) *pgxpool.Pool {
-	if s.pgPool == nil {
-		pool, err := pgxpool.New(ctx, s.PGConfig().DSN())
+func (s *serviceProvider) DBClient(ctx context.Context) db.Client {
+	if s.dbClient == nil {
+		cl, err := pg.New(ctx, s.PGConfig().DSN())
 		if err != nil {
-			log.Fatalf("failed to connect to dstabase: %v", err)
+			log.Fatalf("failed to create db client: %v", err)
 		}
 
-		err = pool.Ping(ctx)
+		err = cl.DB().Ping(ctx)
 		if err != nil {
-			log.Fatalf("failed to ping: %v", err.Error())
+			log.Fatalf("ping error: %s", err.Error())
 		}
+		closer.Add(cl.Close)
 
-		closer.Add(func() error {
-			pool.Close()
-			return nil
-		})
-		s.pgPool = pool
+		s.dbClient = cl
 	}
-	return s.pgPool
+
+	return s.dbClient
 }
 
 func (s *serviceProvider) NoteRepo(ctx context.Context) repository.NoteRepo {
 	if s.noteRepo == nil {
-		s.noteRepo = noteRepo.NewRepo(s.PgPool(ctx))
+		s.noteRepo = noteRepo.NewRepo(s.DBClient(ctx))
 	}
 	return s.noteRepo
 }
