@@ -6,6 +6,7 @@ import (
 	notea "microservices_course/week3/internal/api/note"
 	"microservices_course/week3/internal/client/db"
 	"microservices_course/week3/internal/client/db/pg"
+	"microservices_course/week3/internal/client/db/transaction"
 	"microservices_course/week3/internal/closer"
 	"microservices_course/week3/internal/config/env"
 	repository "microservices_course/week3/internal/repo"
@@ -15,10 +16,10 @@ import (
 )
 
 type serviceProvider struct {
-	pgConfig   env.PGConfig
-	grpcConfig env.GPRCConfig
-	dbClient   db.Client
-
+	pgConfig    env.PGConfig
+	grpcConfig  env.GPRCConfig
+	dbClient    db.Client
+	txManager   db.TxManager
 	noteService service.NoteService
 	noteRepo    repository.NoteRepo
 	noteImpl    *notea.Implementation
@@ -66,10 +67,15 @@ func (s *serviceProvider) DBClient(ctx context.Context) db.Client {
 
 		s.dbClient = cl
 	}
-
 	return s.dbClient
 }
+func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
+	if s.txManager == nil {
+		s.txManager = transaction.NewTransactionManager(s.DBClient(ctx).DB())
+	}
 
+	return s.txManager
+}
 func (s *serviceProvider) NoteRepo(ctx context.Context) repository.NoteRepo {
 	if s.noteRepo == nil {
 		s.noteRepo = noteRepo.NewRepo(s.DBClient(ctx))
@@ -79,7 +85,7 @@ func (s *serviceProvider) NoteRepo(ctx context.Context) repository.NoteRepo {
 
 func (s *serviceProvider) NoteService(ctx context.Context) service.NoteService {
 	if s.noteService == nil {
-		s.noteService = noteService.NewService(s.NoteRepo(ctx))
+		s.noteService = noteService.NewService(s.NoteRepo(ctx), s.TxManager(ctx))
 	}
 	return s.noteService
 }
