@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package auth_v1;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/n1cedek/microservices_course/week6/jwt/pkg/access_v1;access_v1";
+
+service AccessV1 {
+  rpc Check(CheckRequest) returns (google.protobuf.Empty);
+}
+
+message CheckRequest{
+  string endpoint_address = 1;
+}
