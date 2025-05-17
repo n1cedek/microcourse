@@ -11,7 +11,7 @@ import (
 	"log"
 	"microservices_course/config/internal/config"
 	"microservices_course/config/internal/config/env"
-	desc "microservices_course/grpc/pkg/note_v1"
+	"microservices_course/week7/grpcl/grpc/pkg/note_v1"
 	"net"
 )
 
@@ -22,17 +22,17 @@ func init() {
 }
 
 type server struct {
-	desc.UnimplementedNoteV1Server
+	note_v1.UnimplementedNoteV1Server
 	pool *pgxpool.Pool
 }
 
-func (s *server) Get(ctx context.Context, req *desc.GetRequest) (*desc.GetResponse, error) {
+func (s *server) Get(ctx context.Context, req *note_v1.GetRequest) (*note_v1.GetResponse, error) {
 	log.Printf("Get ID: %v", req.GetId())
 
-	return &desc.GetResponse{
-		Note: &desc.Note{
+	return &note_v1.GetResponse{
+		Note: &note_v1.Note{
 			Id: req.GetId(),
-			Info: &desc.NoteInfo{
+			Info: &note_v1.NoteInfo{
 				Title:    gofakeit.BeerName(),
 				Content:  gofakeit.IPv4Address(),
 				Author:   gofakeit.Name(),
@@ -71,7 +71,7 @@ func main() {
 
 	s := grpc.NewServer()
 	reflection.Register(s)
-	desc.RegisterNoteV1Server(s, &server{})
+	note_v1.RegisterNoteV1Server(s, &server{})
 
 	log.Printf("server listening at %v", lis.Addr())
 
