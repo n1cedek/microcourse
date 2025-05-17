@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log"
-	desc "microservices_course/grpc/pkg/note_v1"
+	"microservices_course/week7/grpcl/grpc/pkg/note_v1"
 	"time"
 )
 
@@ -22,12 +22,12 @@ func main() {
 	}
 	defer conn.Close()
 
-	c := desc.NewNoteV1Client(conn)
+	c := note_v1.NewNoteV1Client(conn)
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	r, err := c.Get(ctx, &desc.GetRequest{Id: noteID})
+	r, err := c.Get(ctx, &note_v1.GetRequest{Id: noteID})
 
 	if err != nil {
 		log.Fatalf("failed to get note by ID: %v", err)

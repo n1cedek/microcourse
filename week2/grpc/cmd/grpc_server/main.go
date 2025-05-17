@@ -2,29 +2,39 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"github.com/brianvoe/gofakeit"
+	grpcMiddleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/natefinch/lumberjack"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"log"
-	desc "microservices_course/grpc/pkg/note_v1"
+	"microservices_course/week7/grpcl/grpc/internal/interceptor"
+	"microservices_course/week7/grpcl/grpc/internal/logger"
+	"microservices_course/week7/grpcl/grpc/pkg/note_v1"
 	"net"
+	"os"
 )
+
+var logLevel = flag.String("l", "info", "log level")
 
 const grpcPort = 50051
 
 type server struct {
-	desc.UnimplementedNoteV1Server
+	note_v1.UnimplementedNoteV1Server
 }
 
-func (s *server) Get(ctx context.Context, req *desc.GetRequest) (*desc.GetResponse, error) {
-	log.Printf("Get ID: %v", req.GetId())
+func (s *server) Get(ctx context.Context, req *note_v1.GetRequest) (*note_v1.GetResponse, error) {
+	logger.Info("Getting note...", zap.Int64("id", req.GetId()))
 
-	return &desc.GetResponse{
-		Note: &desc.Note{
+	return &note_v1.GetResponse{
+		Note: &note_v1.Note{
 			Id: req.GetId(),
-			Info: &desc.NoteInfo{
+			Info: &note_v1.NoteInfo{
 				Title:    gofakeit.BeerName(),
 				Content:  gofakeit.IPv4Address(),
 				Author:   gofakeit.Name(),
@@ -42,9 +52,16 @@ func main() {
 		log.Fatalf("failed to listen server: %v", err)
 	}
 
-	s := grpc.NewServer()
+	logger.Init(getCore(getAtomicLevel()))
+
+	s := grpc.NewServer(grpc.UnaryInterceptor(grpcMiddleware.ChainUnaryServer(
+		interceptor.LogInterceptor,
+		interceptor.ValidateInterceptor,
+	),
+	),
+	)
 	reflection.Register(s)
-	desc.RegisterNoteV1Server(s, &server{})
+	note_v1.RegisterNoteV1Server(s, &server{})
 
 	log.Printf("server listening at %v", lis.Addr())
 
@@ -52,4 +69,40 @@ func main() {
 		log.Fatalf("failed to serve: %v", err)
 	}
 
+}
+
+func getCore(level zap.AtomicLevel) zapcore.Core {
+	stdout := zapcore.AddSync(os.Stdout)
+
+	file := zapcore.AddSync(&lumberjack.Logger{
+		Filename:   "logs/app.log",
+		MaxSize:    10, // megabytes
+		MaxBackups: 3,
+		MaxAge:     7, // days
+	})
+
+	prodCfg := zap.NewProductionEncoderConfig()
+	prodCfg.TimeKey = "timestamp"
+	prodCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	develCfg := zap.NewDevelopmentEncoderConfig()
+	develCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
+
+	consoleEncoder := zapcore.NewConsoleEncoder(develCfg)
+	fileEnc := zapcore.NewJSONEncoder(prodCfg)
+
+	return zapcore.NewTee(
+		zapcore.NewCore(consoleEncoder, stdout, level),
+		zapcore.NewCore(fileEnc, file, level),
+	)
+
+}
+
+func getAtomicLevel() zap.AtomicLevel {
+	var level zapcore.Level
+	if err := level.Set(*logLevel); err != nil {
+		log.Fatalf("failed to set log level: %v", err)
+	}
+
+	return zap.NewAtomicLevelAt(level)
 }
