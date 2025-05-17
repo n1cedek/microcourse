@@ -13,9 +13,9 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"log"
-	"microservices_course/week7/grpcl/grpc/internal/interceptor"
-	"microservices_course/week7/grpcl/grpc/internal/logger"
-	"microservices_course/week7/grpcl/grpc/pkg/note_v1"
+	"microservices_course/grpc/internal/interceptor"
+	"microservices_course/grpc/internal/logger"
+	"microservices_course/grpc/pkg/note_v1"
 	"net"
 	"os"
 )

@@ -11,7 +11,8 @@ import (
 	"log"
 	"microservices_course/config/internal/config"
 	"microservices_course/config/internal/config/env"
-	"microservices_course/week7/grpcl/grpc/pkg/note_v1"
+	"microservices_course/grpc/pkg/note_v1"
+
 	"net"
 )
 

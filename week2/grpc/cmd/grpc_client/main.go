@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log"
-	"microservices_course/week7/grpcl/grpc/pkg/note_v1"
+	"microservices_course/grpc/pkg/note_v1"
 	"time"
 )
 
