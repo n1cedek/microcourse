@@ -6,3 +6,6 @@
 /week3/bin/
 /week4/bin/
 /week5/vendor.protogen/
+/week8/chat/bin/
+/week8/circuit_breaker/grpc/bin/
+/week8/rate_limiter/grpc/bin/
