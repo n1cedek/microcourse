@@ -13,7 +13,7 @@ import (
 const grpcPort = 50051
 
 func main() {
-	lis, err := net.Listen("tcp", fmt.Sprintf("%d", grpcPort))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
