@@ -12,8 +12,7 @@ import (
 )
 
 const (
-	tableName = "note"
-
+	tableName       = "note"
 	idColumn        = "id"
 	titleColumn     = "title"
 	contentColumn   = "body"
